@@ -504,3 +504,10 @@ is never copied into the image.
   `Intl`-based localization would cleanly separate the two.
 - **Very large boards**: every parcel is rendered. For significantly more than
   the current ~200 tickets, clustering or LOD would be the next step.
+
+## Privacy & license
+
+- [Privacy Policy](PRIVACY.md) — what the extension stores and which requests
+  it sends (only to the Jira host you configure). Use the URL below in the
+  Mozilla Add-ons submission form.
+- MIT — see [LICENSE](LICENSE).
