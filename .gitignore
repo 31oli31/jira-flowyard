@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+data/settings.json
+tmp/
+.DS_Store
+*.log
+coverage/
+dist/
+artifact-*.html

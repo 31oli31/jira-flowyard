@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <meta
+      name="description"
+      content="A 3D logistics campus that visualises Jira tickets as parcels on a conveyor belt. Jira is accessed through a server-side REST proxy."
+    />
+    <title>Christmas Logistics Campus · Jira</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/styles.css" />
+
+    <!--
+      The import map lets the browser resolve the bare "three" specifier that
+      three.js addons such as OrbitControls use internally.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/vendor/three/build/three.module.js",
+          "three/addons/": "/vendor/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+
+  <body class="panel-closed">
+    <main id="app">
+      <div id="scene"></div>
+
+      <header class="topbar glass">
+        <div class="brand">
+          <div id="brandIcon" class="brand-icon">🏭</div>
+
+          <div>
+            <strong id="campusTitle">Global Logistics Campus</strong>
+            <small>
+              <i class="online-dot"></i>
+              <span id="campusSubtitle">
+                Corporate Zone A · Jira Logistics
+              </span>
+            </small>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <article class="kpi">
+            <div id="packageKpiIcon" class="kpi-icon">📦</div>
+            <div>
+              <small>Active packages</small>
+              <strong id="totalPackages">0</strong>
+            </div>
+          </article>
+
+          <article class="kpi">
+            <div id="inProgressKpiIcon" class="kpi-icon">🚚</div>
+            <div>
+              <small id="inProgressKpiLabel">In progress</small>
+              <strong id="inProgressPackages">0</strong>
+            </div>
+          </article>
+
+          <article class="kpi">
+            <div id="deliveredKpiIcon" class="kpi-icon">✅</div>
+            <div>
+              <small>Delivered</small>
+              <strong id="deliveredPackages">0</strong>
+            </div>
+          </article>
+        </div>
+
+        <div class="theme-control">
+          <button
+            id="themeButton"
+            class="theme-button"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="themeMenu"
+            aria-label="Campus theme"
+          >
+            <span id="themeButtonIcon" class="theme-icon" aria-hidden="true"
+              >🏢</span
+            >
+            <span id="themeButtonLabel" class="theme-label">Corporate</span>
+            <span class="theme-caret" aria-hidden="true">⌄</span>
+          </button>
+
+          <div
+            id="themeMenu"
+            class="theme-menu"
+            role="listbox"
+            aria-label="Campus themes"
+            hidden
+          ></div>
+        </div>
+
+        <div class="topbar-actions">
+          <button
+            id="animateToggle"
+            class="animate-button"
+            type="button"
+            title="Start the animated parcel flow (A)"
+            aria-label="Start animation"
+            aria-pressed="false"
+          >
+            <span id="animateIcon" aria-hidden="true">▶</span>
+            <span id="animateLabel">Animate</span>
+          </button>
+
+          <button
+            id="openPackages"
+            class="icon-button"
+            type="button"
+            title="Browse packages (/)"
+            aria-label="Browse packages"
+            aria-controls="packageDrawer"
+            aria-expanded="false"
+          >
+            📦
+          </button>
+
+          <button
+            id="openSettings"
+            class="icon-button"
+            type="button"
+            title="Jira settings"
+            aria-label="Open Jira settings"
+            aria-controls="settingsDrawer"
+            aria-expanded="false"
+          >
+            ⚙
+          </button>
+
+          <button
+            id="panelToggle"
+            class="icon-button"
+            type="button"
+            title="Toggle details panel (P)"
+            aria-label="Toggle details panel"
+            aria-controls="ticketPanel"
+            aria-expanded="false"
+          >
+            ☰
+          </button>
+        </div>
+      </header>
+
+      <div
+        id="syncBanner"
+        class="sync-banner glass"
+        role="status"
+        aria-live="polite"
+        hidden
+      >
+        <span id="syncBannerDot" class="sync-indicator"></span>
+
+        <div class="sync-banner-copy">
+          <strong id="syncBannerTitle">Jira sync failed</strong>
+          <small id="syncBannerDetails"></small>
+        </div>
+
+        <button id="syncBannerAction" class="small-button" type="button">
+          Retry
+        </button>
+
+        <button
+          id="dismissSyncBanner"
+          class="icon-button subtle"
+          type="button"
+          title="Dismiss"
+          aria-label="Dismiss notification"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="scene-tools glass">
+        <button id="resetCamera" type="button" title="Reset camera">⌂</button>
+        <button id="topCamera" type="button" title="Top view">◈</button>
+        <button id="focusSelected" type="button" title="Focus package">◎</button>
+        <button
+          id="chaseCamera"
+          type="button"
+          title="Driver's view / cockpit (C)"
+          aria-label="Driver's view"
+          aria-pressed="false"
+        >
+          🎥
+        </button>
+      </div>
+
+      <div class="hint glass">
+        Click: select · Right-click: package options · Double-click: next status ·
+        Drag/Pan/Zoom · /: packages · P: panel · A: animate · C: driver's view
+        (drag to look around)
+      </div>
+
+      <aside id="ticketPanel" class="sidebar glass" aria-label="Ticket details">
+        <div class="sidebar-heading">
+          <div>
+            <span class="eyebrow">Jira Ticket &amp; Asset</span>
+            <h1 id="ticketId">No tickets</h1>
+            <p id="ticketTitle">Waiting for data</p>
+            <a
+              id="jiraIssueLink"
+              class="jira-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              hidden
+            >
+              Open in Jira ↗
+            </a>
+          </div>
+
+          <div class="sidebar-actions">
+            <button id="newTicket" class="small-button" type="button">
+              + Ticket
+            </button>
+
+            <button
+              id="closePanel"
+              class="icon-button subtle"
+              type="button"
+              title="Close panel (Esc)"
+              aria-label="Close details panel"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="selected-card">
+          <div id="packageIcon" class="package-icon">📦</div>
+
+          <div>
+            <small>Selected package</small>
+            <span id="statusBadge" class="status-badge todo">Empty</span>
+          </div>
+        </div>
+
+        <div class="metadata">
+          <div>
+            <span>Quantity</span>
+            <strong id="ticketQuantity">0 units</strong>
+          </div>
+
+          <div>
+            <span>Campus zone</span>
+            <strong id="ticketZone">—</strong>
+          </div>
+
+          <div>
+            <span>Jira tag</span>
+            <strong id="ticketTag">—</strong>
+          </div>
+
+          <div>
+            <span>Assignee</span>
+            <strong id="ticketAssignee">—</strong>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <span>Workflow</span>
+          <span id="workflowHint">Mock workspace</span>
+        </div>
+
+        <div class="workflow">
+          <button class="workflow-button" data-status="To Do" type="button">
+            <span>1</span>
+            To Do
+            <span id="countTodo" class="count">0</span>
+          </button>
+
+          <button
+            class="workflow-button"
+            data-status="In Progress"
+            type="button"
+          >
+            <span>2</span>
+            Progress
+            <span id="countProgress" class="count">0</span>
+          </button>
+
+          <button
+            class="workflow-button"
+            data-status="In Review"
+            type="button"
+          >
+            <span>3</span>
+            Review
+            <span id="countReview" class="count">0</span>
+          </button>
+
+          <button
+            class="workflow-button"
+            data-status="In Testing"
+            type="button"
+          >
+            <span>4</span>
+            Testing
+            <span id="countTesting" class="count">0</span>
+          </button>
+        </div>
+
+        <button id="releaseButton" class="release-button" type="button">
+          🚜 Release &amp; start transport
+        </button>
+
+      </aside>
+
+      <aside
+        id="packageDrawer"
+        class="package-drawer glass"
+        aria-label="Package browser"
+        hidden
+      >
+        <header class="drawer-heading">
+          <div>
+            <span class="eyebrow">Campus</span>
+            <h2 id="packageDrawerTitle">Packages</h2>
+          </div>
+
+          <button
+            id="closePackages"
+            class="icon-button subtle"
+            type="button"
+            title="Close package browser (Esc)"
+            aria-label="Close package browser"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="package-search">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            id="packageSearch"
+            type="search"
+            placeholder="Search ID, title, assignee…"
+            aria-label="Search packages"
+            autocomplete="off"
+          />
+          <button
+            id="clearPackageSearch"
+            class="search-clear"
+            type="button"
+            title="Clear search"
+            aria-label="Clear search"
+            hidden
+          >
+            ✕
+          </button>
+        </div>
+
+        <div
+          id="packageFilters"
+          class="filter-chips"
+          role="group"
+          aria-label="Filter packages by status"
+        >
+          <button class="filter-chip active" data-filter="all" type="button">
+            All <span id="filterCountAll">0</span>
+          </button>
+          <button class="filter-chip" data-filter="To Do" type="button">
+            To Do <span id="filterCountTodo">0</span>
+          </button>
+          <button class="filter-chip" data-filter="In Progress" type="button">
+            Progress <span id="filterCountProgress">0</span>
+          </button>
+          <button class="filter-chip" data-filter="In Review" type="button">
+            Review <span id="filterCountReview">0</span>
+          </button>
+          <button class="filter-chip" data-filter="In Testing" type="button">
+            Testing <span id="filterCountTesting">0</span>
+          </button>
+        </div>
+
+        <div
+          id="packageList"
+          class="package-list"
+          role="listbox"
+          aria-label="Packages"
+        ></div>
+
+        <p id="packageEmpty" class="package-empty" hidden></p>
+      </aside>
+
+      <div id="settingsBackdrop" class="drawer-backdrop" hidden></div>
+
+      <aside
+        id="settingsDrawer"
+        class="settings-drawer glass"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settingsTitle"
+        hidden
+      >
+        <header class="drawer-heading">
+          <div>
+            <span class="eyebrow">Workspace</span>
+            <h2 id="settingsTitle">Jira integration</h2>
+          </div>
+
+          <button
+            id="closeSettings"
+            class="icon-button subtle"
+            type="button"
+            title="Close settings (Esc)"
+            aria-label="Close settings"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="api-panel">
+          <div class="api-heading">
+            <div>
+              <strong>Jira integration</strong>
+              <small>
+                Server-side REST proxy · credentials stay on the backend
+              </small>
+            </div>
+
+            <span id="apiModeBadge">Mock</span>
+          </div>
+
+          <div class="mode-toggle">
+            <button id="mockModeButton" class="active" type="button">
+              Mock
+            </button>
+
+            <button id="liveModeButton" type="button">Live Jira</button>
+          </div>
+
+          <div id="liveSettings" class="live-settings" hidden>
+            <div id="connectionCard" class="connection-card">
+              <span id="connectionDot" class="sync-indicator"></span>
+
+              <div class="connection-copy">
+                <strong id="connectionTitle">Checking backend…</strong>
+                <small id="connectionDetails">Waiting for /api/config</small>
+              </div>
+
+              <button id="testConnection" type="button" title="Test connection">
+                Test
+              </button>
+            </div>
+
+            <label class="api-label" for="jiraTicketTag">
+              Jira label / ticket tag
+            </label>
+
+            <input
+              id="jiraTicketTag"
+              class="api-field"
+              value="christmas-2026"
+              placeholder="logistics"
+              autocomplete="off"
+            />
+
+            <label class="api-label" for="jiraProjectKey">
+              Project key, optional
+            </label>
+
+            <input
+              id="jiraProjectKey"
+              class="api-field"
+              placeholder="LOG"
+              autocomplete="off"
+            />
+
+            <label class="api-label" for="jiraQuantityField">
+              Quantity custom field, optional
+            </label>
+
+            <input
+              id="jiraQuantityField"
+              class="api-field"
+              placeholder="customfield_10042"
+              autocomplete="off"
+            />
+
+            <label class="api-label" for="jiraIssueKey">
+              Single issue key, optional
+            </label>
+
+            <input
+              id="jiraIssueKey"
+              class="api-field"
+              placeholder="DEMO-123"
+              autocomplete="off"
+            />
+
+            <label class="api-label" for="jiraPollInterval">
+              Refresh interval
+            </label>
+
+            <select id="jiraPollInterval" class="api-select">
+              <option value="5000">Every 5 seconds</option>
+              <option value="15000" selected>Every 15 seconds</option>
+              <option value="30000">Every 30 seconds</option>
+              <option value="60000">Every minute</option>
+            </select>
+
+            <label class="api-checkbox">
+              <input id="jiraAutoRefresh" type="checkbox" checked />
+              <span>Automatically refresh Jira tickets</span>
+            </label>
+
+            <div class="api-actions">
+              <button id="loadJiraButton" class="primary" type="button">
+                Sync now
+              </button>
+
+              <button id="stopJiraButton" type="button">
+                Stop sync
+              </button>
+            </div>
+          </div>
+
+          <div class="active-tag">
+            <span>Active ticket tag</span>
+            <strong id="activeJiraTag">#christmas-2026</strong>
+          </div>
+
+          <div class="sync-summary">
+            <span id="syncIndicator" class="sync-indicator"></span>
+
+            <div>
+              <strong id="syncText">Mock data loaded</strong>
+              <small id="syncDetails">Local demo tickets</small>
+            </div>
+          </div>
+
+          <p class="api-warning">
+            The browser only calls <code>/api/jira/*</code>. Credentials live in
+            <code>.env</code> on the server, which also resolves CORS.
+          </p>
+        </div>
+      </aside>
+
+      <section class="shipment glass">
+        <div class="shipment-summary">
+          <div id="shipmentIcon" class="shipment-icon">🚚</div>
+
+          <div>
+            <span>Shipment tracking</span>
+            <strong id="shipmentId">#SHP-78442</strong>
+            <small id="shipmentDestination">
+              Philadelphia, PA · Bay 1
+            </small>
+          </div>
+        </div>
+
+        <div class="tracking">
+          <div class="tracking-labels">
+            <span id="step0">To Do</span>
+            <span id="step1">In Progress</span>
+            <span id="step2">In Review</span>
+            <span id="step3">In Testing</span>
+            <span id="step4">Loading</span>
+            <span id="step5">Live Depot</span>
+          </div>
+
+          <div class="progress-track">
+            <div id="progressValue"></div>
+          </div>
+        </div>
+
+        <div class="shipment-state">
+          <small>Selected ticket</small>
+          <strong id="shipmentStatus">Empty</strong>
+        </div>
+      </section>
+
+      <div id="hallLabel" class="world-label">OPEN MAIN HALL</div>
+      <div id="depotLabel" class="world-label">CENTRAL LIVE DEPOT</div>
+      <div id="officeLabel" class="world-label">CORPORATE OFFICE</div>
+
+      <div id="tooltip">
+        <strong id="tooltipId"></strong>
+        <span id="tooltipTitle"></span>
+        <span id="tooltipStatus"></span>
+        <small id="tooltipMeta"></small>
+      </div>
+
+      <div
+        id="packageMenu"
+        class="context-menu"
+        role="menu"
+        aria-label="Package actions"
+        hidden
+      >
+        <header class="context-menu-head">
+          <strong id="packageMenuTitle">—</strong>
+          <small id="packageMenuMeta"></small>
+        </header>
+
+        <div id="packageMenuActions" class="context-menu-actions"></div>
+      </div>
+    </main>
+
+    <div id="ticketModal" class="modal-backdrop" hidden>
+      <form id="ticketForm" class="modal glass" novalidate>
+        <header>
+          <div>
+            <span class="eyebrow">Jira REST API v3</span>
+            <h2>Create a Jira ticket</h2>
+          </div>
+
+          <button id="closeTicketModal" type="button" aria-label="Close">
+            ✕
+          </button>
+        </header>
+
+        <label class="api-label" for="newTicketSummary">Summary</label>
+        <input
+          id="newTicketSummary"
+          class="api-field"
+          maxlength="254"
+          required
+          autocomplete="off"
+        />
+
+        <div class="modal-grid">
+          <div>
+            <label class="api-label" for="newTicketProject">Project key</label>
+            <input
+              id="newTicketProject"
+              class="api-field"
+              maxlength="32"
+              required
+              autocomplete="off"
+            />
+          </div>
+
+          <div>
+            <label class="api-label" for="newTicketQuantity">Quantity</label>
+            <input
+              id="newTicketQuantity"
+              class="api-field"
+              type="number"
+              min="0"
+              step="1"
+              value="1"
+            />
+          </div>
+        </div>
+
+        <label class="api-label" for="newTicketDescription">
+          Description, optional
+        </label>
+        <textarea
+          id="newTicketDescription"
+          class="api-field"
+          rows="3"
+          maxlength="4000"
+        ></textarea>
+
+        <p id="ticketFormError" class="form-error" hidden></p>
+
+        <div class="modal-actions">
+          <button id="cancelTicketModal" type="button">Cancel</button>
+          <button id="submitTicket" class="primary" type="submit">
+            Create in Jira
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="toasts" class="toasts" aria-live="polite"></div>
+    <div id="liveStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

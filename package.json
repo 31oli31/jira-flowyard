@@ -1,0 +1,27 @@
+{
+  "name": "jira-flowyard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D ticket-flow visualizer with a server-side Jira REST proxy",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node test/e2e/ui.e2e.mjs",
+    "check": "node --check server/index.js && node --check public/js/app.js && node --check public/js/engine.js",
+    "build:extension": "node scripts/build-extension.mjs",
+    "dist": "node scripts/package-extension.mjs",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.17.0"
+  }
+}

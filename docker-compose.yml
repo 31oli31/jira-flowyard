@@ -1,0 +1,14 @@
+services:
+  campus:
+    build: .
+    image: jira-flowyard:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      NODE_ENV: production
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

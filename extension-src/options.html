@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jira connection · Christmas Logistics Campus</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div class="brand">
+          <div class="brand-icon">🎄</div>
+          <div>
+            <h1>Christmas Logistics Campus</h1>
+            <p>Jira connection for the browser extension</p>
+          </div>
+        </div>
+
+        <button id="openCampus" class="button" type="button">
+          Open campus ↗
+        </button>
+      </header>
+
+      <form id="connectionForm" class="card" novalidate>
+        <h2>Jira instance</h2>
+        <p class="hint">
+          The campus calls <code>/rest/api/3</code> of this Jira directly from
+          your browser. Credentials are stored locally in
+          <code>chrome.storage.local</code> and never leave this browser.
+        </p>
+
+        <label for="jiraBaseUrl">
+          Jira base URL <span class="required">*</span>
+        </label>
+        <input
+          id="jiraBaseUrl"
+          class="field"
+          type="url"
+          placeholder="https://your-domain.atlassian.net"
+          autocomplete="off"
+          spellcheck="false"
+          required
+        />
+        <small class="field-hint" id="permissionHint">
+          Jira Cloud (…atlassian.net) and self-hosted Jira (Server/Data
+          Center) are supported.
+        </small>
+
+        <label for="jiraAuthMode">Authentication</label>
+        <select id="jiraAuthMode" class="field">
+          <option value="auto" selected>
+            Automatic (token + email → Basic, token only → Bearer)
+          </option>
+          <option value="basic">Basic (Atlassian email + API token)</option>
+          <option value="bearer">Bearer (personal access token)</option>
+          <option value="none">None (auth handled by a reverse proxy)</option>
+        </select>
+
+        <div class="grid">
+          <div>
+            <label for="jiraEmail">Atlassian email</label>
+            <input
+              id="jiraEmail"
+              class="field"
+              type="email"
+              placeholder="name@company.com"
+              autocomplete="off"
+            />
+          </div>
+
+          <div>
+            <label for="jiraToken">API token / PAT</label>
+            <input
+              id="jiraToken"
+              class="field"
+              type="password"
+              placeholder="••••••••"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <p class="hint">
+          Create an Atlassian API token at
+          <code>id.atlassian.com → Security → API tokens</code>. For Jira
+          Data Center use a personal access token. Prefer a token with the
+          smallest possible scope.
+        </p>
+
+        <h2>Defaults</h2>
+
+        <div class="grid">
+          <div>
+            <label for="jiraIssueType">Issue type for new tickets</label>
+            <input
+              id="jiraIssueType"
+              class="field"
+              maxlength="64"
+              value="Task"
+              autocomplete="off"
+            />
+          </div>
+
+          <div>
+            <label for="jiraStatusMap">Status map (JSON)</label>
+            <input
+              id="jiraStatusMap"
+              class="field"
+              maxlength="4000"
+              placeholder='{"Peer Review": "In Review"}'
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+        </div>
+        <small class="field-hint">
+          Maps Jira workflow statuses onto campus lanes. Targets must be one
+          of: To Do, In Progress, In Review, In Testing, Release, Released.
+        </small>
+
+        <p id="formError" class="error" hidden></p>
+
+        <div class="actions">
+          <button id="saveButton" class="button primary" type="submit">
+            Save
+          </button>
+
+          <button id="testButton" class="button" type="button">
+            Test connection
+          </button>
+
+          <button id="resetButton" class="button danger" type="button">
+            Reset
+          </button>
+        </div>
+
+        <div id="connectionResult" class="result" hidden>
+          <span id="resultDot" class="dot"></span>
+          <div>
+            <strong id="resultTitle"></strong>
+            <small id="resultDetails"></small>
+          </div>
+        </div>
+      </form>
+
+      <footer class="footnote">
+        <p>
+          Everything else (label, project key, poll interval, quantity field)
+          is configured in the campus sidebar. The campus starts in mock mode
+          until a Jira instance is configured here.
+        </p>
+        <p>
+          This page is the only place where credentials are entered. Remove
+          them any time with <strong>Reset</strong>.
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
