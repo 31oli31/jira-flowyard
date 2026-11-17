@@ -1,9 +1,11 @@
-# 🎄 Flowyard — 3D Jira Logistics Campus
+# Jira Flowyard — 3D Jira Visualizer
 
-An interactive 3D visualization of a Jira board: tickets travel as parcels along
-four conveyor belts (To Do → In Progress → In Review → In Testing). The UI runs
-entirely in the browser; **all Jira communication goes through the Node backend
-proxy** — no CORS issues, no credentials in the frontend.
+Jira Flowyard visualizes a Jira board in 3D: tickets travel as parcels along
+four conveyor belts (To Do → In Progress → In Review → In Testing). The campus
+is the visual metaphor; **Christmas is only one of five themes**, not the name
+of the project. The UI runs entirely in the browser; **all Jira communication
+goes through the Node backend proxy** — no CORS issues, no credentials in the
+frontend.
 
 ```
 Browser ──HTTP──▶ Express (server/) ──Basic/Bearer──▶ Jira Cloud REST API
@@ -81,24 +83,82 @@ Browser ──HTTP──▶ Express (server/) ──Basic/Bearer──▶ Jira C
 - **Security**: credentials only server-side, rate limiting, CSP/security
   headers, JQL injection protection, validated settings, timeouts and retries.
 
-## Quick Start
+## Installation
 
-Requires Node.js ≥ 20.12 (developed with Node 24).
+### Prerequisites
+
+- Node.js **≥ 20.12** (developed with Node 24) and npm
+- Chrome/Edge/Brave **111+** or Firefox **128+** for the browser extension
+- A Jira Cloud or Server/Data Center account with a read-capable API token
+  (only needed for live mode)
+
+### Web app (Node server)
 
 ```bash
 npm install
-cp .env.example .env      # fill in values
+cp .env.example .env      # optional: add Jira credentials
 npm start                 # http://127.0.0.1:3000
 ```
 
-For development with auto-reload:
+Use `npm run dev` for auto-reload. Without a `.env` the app starts in mock mode;
+the startup log reports whether the Jira proxy is active.
+
+### Browser extension (Chrome / Edge / Firefox)
 
 ```bash
-npm run dev
+npm install
+npm run build:extension   # writes ./dist/extension
 ```
 
-Without a `.env` the app starts in mock mode. On startup the server reports
-whether a `.env` was loaded and whether the Jira proxy is active.
+- **Chrome / Edge / Brave**: `chrome://extensions` → **Developer mode** →
+  **Load unpacked** → select `dist/extension`.
+- **Firefox**: `about:debugging#/runtime/this-firefox` → **Load Temporary
+  Add-on…** → select `dist/extension/manifest.json`.
+
+The toolbar icon opens the visualizer. Configure Jira in the options page (⚙);
+until then it runs in mock mode. See
+[Browser Extension](#browser-extension-chrome--firefox) for packaging and
+troubleshooting.
+
+Verify the bundle before loading it:
+
+```bash
+test -f dist/extension/manifest.json && test -f dist/extension/js/layout.js && echo OK
+```
+
+If the browser reports `js/layout.js net::ERR_FILE_NOT_FOUND`, the bundle is
+stale: run `npm run build:extension` again, then reload the extension in
+`chrome://extensions` (or the temporary add-on in Firefox).
+
+## AI install prompt (copy & paste)
+
+Paste this into your AI assistant to have it install and verify the browser
+extension. It deliberately does not handle Jira credentials.
+
+```text
+Install the Jira Flowyard browser extension in this repository.
+
+Context:
+- The repository root is the folder containing package.json (name: jira-flowyard).
+- The extension is built with npm scripts; the loadable unpacked folder is dist/extension.
+- Node.js >= 20.12 is required.
+
+Tasks:
+1. Check `node --version`. Abort with a clear message if it is older than 20.12.
+2. Run `npm install`.
+3. Run `npm run build:extension`.
+4. Verify that dist/extension/manifest.json, dist/extension/js/app.js,
+   dist/extension/js/engine.js and dist/extension/js/layout.js exist. If any file
+   is missing, stop and report the exact missing file.
+5. Run `npm test` and report the result.
+6. Do NOT ask for or store Jira credentials. Tell me to open the options page (⚙)
+   and enter them myself.
+7. Because loading an unpacked extension requires a browser UI action, give me
+   the exact short steps for Chrome/Edge and Firefox after the build succeeds.
+
+Report a concise summary of what you ran, the verification result, and the
+remaining manual steps.
+```
 
 ## Controls
 
@@ -132,9 +192,10 @@ whether a `.env` was loaded and whether the Jira proxy is active.
 | `neon` | Night Shift | Night shift, neon rings, sparks |
 
 The theme changes the palette, lighting, decorations and weather particles of
-the scene. Particles are rendered in three depth layers; the frontmost layer
-ignores the depth buffer so snowflakes are always visible even with the
-orthographic camera.
+the scene — the underlying Jira visualizer stays the same. Christmas is just a
+seasonal skin; no theme-specific behavior is required to use Jira Flowyard.
+Particles are rendered in three depth layers; the frontmost layer ignores the
+depth buffer so snowflakes are always visible even with the orthographic camera.
 
 ### URL State
 
@@ -305,13 +366,13 @@ rather than failed.
 
 ## Browser Extension (Chrome & Firefox)
 
-The campus also runs as a standalone browser extension (Manifest V3) — no Node
+Jira Flowyard also runs as a standalone browser extension (Manifest V3) — no Node
 server needed. The Jira REST API is called **directly from the browser**; the
 proxy logic (JQL builder, status mapping, normalization, transition selection,
 validation) was ported 1:1 into browser modules.
 
 ```
-Toolbar icon ──▶ extension/index.html (campus page)
+Toolbar icon ──▶ extension/index.html (visualizer page)
                      │
                      ├─ js/api.js          same interface as /api/*
                      │    └─ js/lib/*      ported server logic
@@ -325,10 +386,26 @@ npm install
 npm run build:extension      # creates ./dist/extension
 ```
 
-- **Chrome**: `chrome://extensions` → *Developer mode* → *Load unpacked* →
-  select the `dist/extension` folder. The toolbar icon opens the campus in a tab.
+Verify the bundle before loading it:
+
+```bash
+node -e 'for (const f of ["manifest.json","js/app.js","js/engine.js","js/layout.js"]) require("node:fs").accessSync("dist/extension/"+f); console.log("extension bundle OK")'
+```
+
+- **Chrome / Edge / Brave**: `chrome://extensions` → *Developer mode* →
+  *Load unpacked* → select the `dist/extension` folder. The toolbar icon opens
+  Jira Flowyard in a tab.
 - **Firefox**: `about:debugging#/runtime/this-firefox` → *Load Temporary
-  Add-on* → `dist/extension/manifest.json`.
+  Add-on…* → select `dist/extension/manifest.json`.
+
+After changing extension code, rebuild and press **Reload** in
+`chrome://extensions` (or reload the temporary add-on in Firefox).
+
+| Symptom | Fix |
+|---------|-----|
+| `js/layout.js net::ERR_FILE_NOT_FOUND` | Stale bundle — run `npm run build:extension` and reload the extension. |
+| `manifest.json` missing | The build was not run or failed; check the build output. |
+| Options page says "Settings could not be loaded" | Reload the extension once after a rebuild; storage access is restricted to trusted contexts. |
 
 ### Distribution (`npm run dist`)
 
@@ -367,7 +444,7 @@ selection, browser Jira client) with dedicated suites.
 ### Architecture notes
 
 - `extension-src/` contains the extension sources; `scripts/build-extension.mjs`
-  assembles `dist/extension` from those plus `public/` (campus page) and
+  assembles `dist/extension` from those plus `public/` (visualizer page) and
   `node_modules/three` (patched to relative imports, since extension CSPs do
   not allow inline import maps).
 - `scripts/package-extension.mjs` (`npm run dist`) additionally packs
@@ -415,12 +492,14 @@ is never copied into the image.
 - Jira Cloud workflows differ per project; not every desired lane is reachable
   via a transition. The backend then returns an error instead of silently
   setting something else.
-- The campus is a visualization, not a replacement for the Jira board; only the
-  filters set in the UI are loaded.
-- **Extension token**: the extension stores credentials in
-  `chrome.storage.local`. For stronger security, `chrome.storage.session` or an
-  OS keychain would be preferable; token scopes should be documented in the
-  extension README.
+- Jira Flowyard is a visualization, not a replacement for the Jira board; only
+  the filters set in the UI are loaded.
+- **Extension token**: credentials persist in this browser profile through
+  `storage.local`; they are not synchronized with `storage.sync`. Browser
+  extension storage is not an encrypted secret vault. The extension restricts
+  this area to trusted extension contexts where supported, requires HTTPS for
+  Jira connections, and users should use a revocable token with only the
+  permissions the extension needs.
 - **i18n**: UI texts are English, this documentation is English as well. An
   `Intl`-based localization would cleanly separate the two.
 - **Very large boards**: every parcel is rendered. For significantly more than

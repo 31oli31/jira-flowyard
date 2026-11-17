@@ -8,6 +8,7 @@
 
 const SETTINGS_KEY = "settings";
 const JIRA_KEY = "jiraConfig";
+let storageAccessPromise;
 
 const JIRA_DEFAULTS = {
   baseUrl: "",
@@ -68,6 +69,23 @@ function storageArea() {
   return globalThis.chrome?.storage?.local;
 }
 
+async function restrictStorageToTrustedContexts(area) {
+  if (typeof area.setAccessLevel !== "function") {
+    return;
+  }
+
+  if (!storageAccessPromise) {
+    storageAccessPromise = callWebExtension(area, "setAccessLevel", {
+      accessLevel: "TRUSTED_CONTEXTS"
+    }).catch((error) => {
+      storageAccessPromise = undefined;
+      throw error;
+    });
+  }
+
+  await storageAccessPromise;
+}
+
 export async function readStorage(keys) {
   const area = storageArea();
 
@@ -75,6 +93,7 @@ export async function readStorage(keys) {
     throw new Error("chrome.storage.local is unavailable");
   }
 
+  await restrictStorageToTrustedContexts(area);
   return callWebExtension(area, "get", keys);
 }
 
@@ -85,6 +104,7 @@ export async function writeStorage(items) {
     throw new Error("chrome.storage.local is unavailable");
   }
 
+  await restrictStorageToTrustedContexts(area);
   return callWebExtension(area, "set", items);
 }
 

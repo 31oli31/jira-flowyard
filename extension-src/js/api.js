@@ -342,7 +342,7 @@ export const api = {
 
     return {
       app: {
-        name: "Christmas Logistics Campus",
+        name: "Jira Flowyard",
         version: VERSION,
         mode: "extension"
       },

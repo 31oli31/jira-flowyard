@@ -162,6 +162,7 @@ test("serves runtime config without leaking credentials", async (t) => {
   const body = await response.json();
 
   assert.equal(response.status, 200);
+  assert.equal(body.app.name, "Jira Flowyard");
   assert.equal(body.jira.configured, true);
   assert.equal(body.jira.authMode, "bearer");
   assert.equal(body.jira.settings.projectKey, "DEMO");

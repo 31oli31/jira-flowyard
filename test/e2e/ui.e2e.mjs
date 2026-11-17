@@ -209,14 +209,14 @@ try {
   check(
     "christmas theme renders visible snow",
     (await evaluate(() => {
-      const weather = window.christmasCampus?.getWeather();
+      const weather = window.jiraFlowyard?.getWeather();
 
       return (
         Boolean(weather) && weather.kind === "snow" && weather.points > 0
       );
     })) === true,
     await evaluate(
-      () => JSON.stringify(window.christmasCampus?.getWeather() ?? null)
+      () => JSON.stringify(window.jiraFlowyard?.getWeather() ?? null)
     )
   );
 
@@ -225,17 +225,17 @@ try {
    * with and without the particle layers and the differing pixels are counted.
    * The camera is reset first so the view matches the default framing.
    */
-  await evaluate(() => window.christmasCampus.resetCamera());
+  await evaluate(() => window.jiraFlowyard.resetCamera());
   await sleep(700);
 
   const snowFrame = await page.screenshot({ encoding: "base64" });
 
-  await evaluate(() => window.christmasCampus.setWeatherVisible(false));
+  await evaluate(() => window.jiraFlowyard.setWeatherVisible(false));
   await sleep(120);
 
   const bareFrame = await page.screenshot({ encoding: "base64" });
 
-  await evaluate(() => window.christmasCampus.setWeatherVisible(true));
+  await evaluate(() => window.jiraFlowyard.setWeatherVisible(true));
 
   const snowPixels = await page.evaluate(
     async ([visible, hidden]) => {
@@ -373,7 +373,7 @@ try {
         document.querySelector("#themeButtonLabel").textContent ===
           "Halloween" &&
         document.querySelector("#deliveredKpiIcon").textContent === "🎃" &&
-        window.christmasCampus.getWeather()?.kind === "embers"
+        window.jiraFlowyard.getWeather()?.kind === "embers"
       );
     })) === true
   );
@@ -389,7 +389,7 @@ try {
       return (
         button.getAttribute("aria-pressed") === "true" &&
         document.querySelector("#animateLabel").textContent === "Stop" &&
-        window.christmasCampus.isDemoRunning() === true
+        window.jiraFlowyard.isDemoRunning() === true
       );
     })) === true
   );
@@ -405,7 +405,7 @@ try {
       return (
         button.getAttribute("aria-pressed") === "false" &&
         document.querySelector("#animateLabel").textContent === "Animate" &&
-        window.christmasCampus.isDemoRunning() === false
+        window.jiraFlowyard.isDemoRunning() === false
       );
     })) === true
   );
@@ -415,7 +415,7 @@ try {
 
   check(
     "the A shortcut toggles the animation",
-    (await evaluate(() => window.christmasCampus.isDemoRunning())) === true
+    (await evaluate(() => window.jiraFlowyard.isDemoRunning())) === true
   );
 
   await page.keyboard.press("a");
@@ -424,7 +424,7 @@ try {
   check(
     "topbar KPIs are driven by real ticket data",
     (await evaluate(() => {
-      const tickets = window.christmasCampus.getTickets();
+      const tickets = window.jiraFlowyard.getTickets();
       const active = tickets.filter((ticket) => !ticket.released);
       const inProgress = active.filter((ticket) =>
         ["In Progress", "In Review", "In Testing"].includes(ticket.status)
@@ -451,7 +451,7 @@ try {
    */
   const truckHit = await evaluate(() => {
     const canvas = document.querySelector("#scene canvas");
-    const campus = window.christmasCampus;
+    const campus = window.jiraFlowyard;
     const bounds = canvas.getBoundingClientRect();
     const startX = Math.round(bounds.left + bounds.width * 0.3);
     const endX = Math.round(bounds.left + bounds.width * 0.7);
@@ -491,12 +491,12 @@ try {
   check(
     "clicking the truck starts drive mode",
     Boolean(truckHit) &&
-      (await evaluate(() => window.christmasCampus.isDriving())),
+      (await evaluate(() => window.jiraFlowyard.isDriving())),
     truckHit
   );
 
   const vehicleBefore = await evaluate(() =>
-    window.christmasCampus.getVehicle()
+    window.jiraFlowyard.getVehicle()
   );
 
   await page.keyboard.down("ArrowUp");
@@ -505,7 +505,7 @@ try {
   await sleep(150);
 
   const vehicleAfter = await evaluate(() =>
-    window.christmasCampus.getVehicle()
+    window.jiraFlowyard.getVehicle()
   );
 
   check(
@@ -519,7 +519,7 @@ try {
   await sleep(300);
 
   const chasingOn = await evaluate(() => {
-    const campus = window.christmasCampus;
+    const campus = window.jiraFlowyard;
     const vehicle = campus.getVehicle();
 
     return {
@@ -570,8 +570,8 @@ try {
   await sleep(450);
 
   const turned = await evaluate(() => ({
-    driving: window.christmasCampus.isDriving(),
-    camera: window.christmasCampus.getViewCamera()
+    driving: window.jiraFlowyard.isDriving(),
+    camera: window.jiraFlowyard.getViewCamera()
   }));
 
   check(
@@ -586,7 +586,7 @@ try {
   await sleep(450);
 
   const recentered = await evaluate(() =>
-    window.christmasCampus.getViewCamera()
+    window.jiraFlowyard.getViewCamera()
   );
 
   check(
@@ -600,9 +600,9 @@ try {
   await sleep(300);
 
   const chasingOff = await evaluate(() => ({
-    active: window.christmasCampus.isChaseView(),
+    active: window.jiraFlowyard.isChaseView(),
     pressed: document.querySelector("#chaseCamera").getAttribute("aria-pressed"),
-    camera: window.christmasCampus.getViewCamera()
+    camera: window.jiraFlowyard.getViewCamera()
   }));
 
   check(
@@ -618,7 +618,7 @@ try {
 
   const resetHit = await evaluate(() => {
     const canvas = document.querySelector("#scene canvas");
-    const campus = window.christmasCampus;
+    const campus = window.jiraFlowyard;
     const bounds = canvas.getBoundingClientRect();
     const startX = Math.round(bounds.left + bounds.width * 0.3);
     const endX = Math.round(bounds.left + bounds.width * 0.7);
@@ -647,8 +647,8 @@ try {
   await sleep(250);
 
   const parked = await evaluate(() => ({
-    driving: window.christmasCampus.isDriving(),
-    vehicle: window.christmasCampus.getVehicle()
+    driving: window.jiraFlowyard.isDriving(),
+    vehicle: window.jiraFlowyard.getVehicle()
   }));
 
   check(
@@ -666,7 +666,7 @@ try {
   await sleep(300);
 
   const afterReset = await evaluate(() => ({
-    chase: window.christmasCampus.isChaseView(),
+    chase: window.jiraFlowyard.isChaseView(),
     pressed: document.querySelector("#chaseCamera").getAttribute("aria-pressed")
   }));
 

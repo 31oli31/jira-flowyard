@@ -79,9 +79,9 @@ function showResult(type, title, details = "") {
 async function updatePermissionHint(baseUrl) {
   const hint = $("#permissionHint");
 
-  if (!baseUrl || !/^https?:\/\//i.test(baseUrl)) {
+  if (!baseUrl || !/^https:\/\//i.test(baseUrl)) {
     hint.textContent =
-      "Jira Cloud (…atlassian.net) and self-hosted Jira (Server/Data Center) are supported.";
+      "Enter an HTTPS URL. Jira Cloud (…atlassian.net) and self-hosted Jira (Server/Data Center) are supported.";
     hint.className = "field-hint";
     return;
   }
@@ -116,8 +116,8 @@ async function saveConfig(event) {
     return;
   }
 
-  if (form.baseUrl && !/^https?:\/\//i.test(form.baseUrl)) {
-    showError("The Jira base URL must start with http:// or https://");
+  if (form.baseUrl && !/^https:\/\//i.test(form.baseUrl)) {
+    showError("The Jira base URL must start with https://");
     return;
   }
 
@@ -157,7 +157,7 @@ async function saveConfig(event) {
       showResult(
         "error",
         "Saved, but host access was not granted",
-        `The campus cannot reach ${new URL(form.baseUrl).host} without the host permission. Click Save again and confirm the browser prompt.`
+        `Jira Flowyard cannot reach ${new URL(form.baseUrl).host} without the host permission. Click Save again and confirm the browser prompt.`
       );
       await updatePermissionHint(form.baseUrl);
       return;
@@ -169,7 +169,7 @@ async function saveConfig(event) {
     form.baseUrl ? "Settings saved" : "Settings cleared",
     form.baseUrl
       ? `Credentials stored locally for ${new URL(form.baseUrl).host}`
-      : "The campus will run in mock mode"
+      : "Jira Flowyard will run in mock mode"
   );
 
   await updatePermissionHint(form.baseUrl);
@@ -259,7 +259,7 @@ async function resetConfig() {
   await writeJiraConfig(jiraDefaults());
   applyForm(jiraDefaults());
 
-  showResult("ok", "Credentials removed", "The campus will run in mock mode");
+  showResult("ok", "Credentials removed", "Jira Flowyard will run in mock mode");
   await updatePermissionHint("");
 }
 

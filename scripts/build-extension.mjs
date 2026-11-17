@@ -2,7 +2,7 @@
  * Assembles the Chrome/Firefox extension into ./dist/extension.
  *
  * Sources:
- *  - public/          campus UI (index.html, app.js, engine.js, styles.css)
+ *  - public/          campus UI (index.html, app.js, engine.js, layout.js, styles.css)
  *  - extension-src/   extension-only modules (manifest, options page, api)
  *  - node_modules/     vendored three.js (patched to relative imports)
  *
@@ -15,7 +15,7 @@
  * immediately instead of silently producing a broken build.
  */
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,8 +76,8 @@ async function buildCampusHtml() {
 
   html = replaceExact(
     html,
-    `content="A 3D logistics campus that visualises Jira tickets as parcels on a conveyor belt. Jira is accessed through a server-side REST proxy."`,
-    `content="A 3D logistics campus that visualises Jira tickets as parcels on a conveyor belt. Runs as a browser extension and talks to the Jira REST API directly."`,
+    `content="Jira Flowyard is an interactive 3D visualizer that shows Jira tickets as parcels moving through a campus. The Node app uses a server-side Jira proxy."`,
+    `content="Jira Flowyard is an interactive 3D visualizer that shows Jira tickets as parcels moving through a campus. The browser extension talks to the Jira REST API directly."`,
     "meta description"
   );
 
@@ -360,12 +360,50 @@ async function buildManifest() {
   );
 }
 
+async function validateRelativeImports() {
+  async function jsFiles(directory) {
+    const files = [];
+
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        files.push(...(await jsFiles(path)));
+      } else if (entry.isFile() && entry.name.endsWith(".js")) {
+        files.push(path);
+      }
+    }
+
+    return files;
+  }
+
+  const pattern = /(?:from\s+|import\s*\()["'](\.[^"']+)["']/g;
+  const missing = [];
+
+  for (const file of await jsFiles(outDir)) {
+    const source = await readText(file);
+
+    for (const match of source.matchAll(pattern)) {
+      const target = resolve(dirname(file), match[1]);
+
+      if (!existsSync(target)) {
+        missing.push(`${relative(outDir, file)} → ${match[1]}`);
+      }
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(`Unresolved relative imports:\n  ${missing.join("\n  ")}`);
+  }
+}
+
 async function syntaxCheck() {
   const files = [
     "background.js",
     "options.js",
     "js/app.js",
     "js/engine.js",
+    "js/layout.js",
     "js/api.js",
     "js/lib/jira-client.js",
     "js/lib/jql.js",
@@ -410,6 +448,7 @@ export async function buildExtension() {
   log("Building campus page, app and engine");
   await cp(join(publicDir, "css"), join(outDir, "css"), { recursive: true });
   await cp(join(publicDir, "favicon.svg"), join(outDir, "favicon.svg"));
+  await cp(join(publicDir, "js", "layout.js"), join(outDir, "js", "layout.js"));
   await buildCampusHtml();
   await buildAppJs();
   await buildEngineJs();
@@ -425,6 +464,9 @@ export async function buildExtension() {
 
   log("Syntax-checking all scripts");
   await syntaxCheck();
+
+  log("Validating relative imports");
+  await validateRelativeImports();
 }
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

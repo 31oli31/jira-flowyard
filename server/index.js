@@ -59,7 +59,7 @@ async function main() {
 
   const server = app.listen(config.port, config.host, () => {
     console.log(
-      `🎄 Christmas Logistics Campus listening on http://${config.host}:${config.port}`
+      `📦 Jira Flowyard listening on http://${config.host}:${config.port}`
     );
     console.log(
       envLoaded ? "   .env loaded" : "   no .env file found (mock mode only)"

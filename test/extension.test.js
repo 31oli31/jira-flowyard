@@ -106,6 +106,7 @@ test("extension settings keep the server schema", () => {
 test("api.getConfig describes the unconfigured extension", async () => {
   const config = await api.getConfig();
 
+  assert.equal(config.app.name, "Jira Flowyard");
   assert.equal(config.app.mode, "extension");
   assert.equal(config.jira.configured, false);
   assert.equal(config.jira.site, null);

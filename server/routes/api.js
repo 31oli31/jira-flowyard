@@ -166,7 +166,7 @@ export function createApiRouter({ jira, settingsStore, cache, config, version })
 
       res.json({
         app: {
-          name: "Christmas Logistics Campus",
+          name: "Jira Flowyard",
           version,
           mode: config.isProduction ? "production" : "development"
         },

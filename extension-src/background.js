@@ -1,5 +1,5 @@
 /*
- * Opens the campus in a new tab when the toolbar icon is clicked. There is no
+ * Opens Jira Flowyard in a new tab when the toolbar icon is clicked. There is no
  * popup: the 3D scene needs a full page.
  */
 chrome.action.onClicked.addListener(() => {

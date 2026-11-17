@@ -1,13 +1,32 @@
 import { campus } from "./engine.js";
 import { api } from "./api.js";
 
-const THEME_KEY = "jira-logistics-campus-theme";
-const PANEL_KEY = "jira-logistics-campus-panel";
+const THEME_KEY = "jira-flowyard-theme";
+const PANEL_KEY = "jira-flowyard-panel";
+const LEGACY_THEME_KEY = "jira-logistics-campus-theme";
+const LEGACY_PANEL_KEY = "jira-logistics-campus-panel";
 const STATUSES = campus.STATUSES;
 const TRANSITION_CACHE_TTL_MS = 30_000;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+function readPreference(key, legacyKey) {
+  const value = localStorage.getItem(key);
+
+  if (value !== null) {
+    return value;
+  }
+
+  const legacy = localStorage.getItem(legacyKey);
+
+  if (legacy !== null) {
+    localStorage.setItem(key, legacy);
+    localStorage.removeItem(legacyKey);
+  }
+
+  return legacy;
+}
 
 const state = {
   dataMode: "mock",
@@ -120,7 +139,7 @@ function notify({ type = "info", title, message = "", timeout = 6500 }) {
 const THEME_UI = {
   corporate: {
     title: "Global Logistics Campus",
-    subtitle: "Corporate Zone A · Jira Logistics",
+    subtitle: "Jira Flowyard · Corporate Zone A",
     brandIcon: "🏭",
     packageIcon: "📦",
     shipmentIcon: "🚚",
@@ -131,12 +150,12 @@ const THEME_UI = {
     releaseLabel: "🚜 Release & start transport",
     hallLabel: "OPEN MAIN HALL",
     depotLabel: "CENTRAL LIVE DEPOT",
-    documentTitle: "Global Logistics Campus · Jira"
+    documentTitle: "Jira Flowyard · Global Logistics Campus"
   },
 
   christmas: {
     title: "Christmas Logistics Campus",
-    subtitle: "North Pole Workshop · Jira Gift Sync",
+    subtitle: "Jira Flowyard · Christmas Workshop",
     brandIcon: "🎄",
     packageIcon: "🎁",
     shipmentIcon: "🛷",
@@ -147,12 +166,12 @@ const THEME_UI = {
     releaseLabel: "🛷 Release & start sleigh",
     hallLabel: "CHRISTMAS WORKSHOP",
     depotLabel: "NORTH POLE GIFT DEPOT",
-    documentTitle: "Christmas Logistics Campus · Jira"
+    documentTitle: "Jira Flowyard · Christmas Theme"
   },
 
   halloween: {
     title: "Halloween Logistics Campus",
-    subtitle: "Pumpkin Yard · Jira Trick-or-Treat Sync",
+    subtitle: "Jira Flowyard · Pumpkin Yard",
     brandIcon: "🎃",
     packageIcon: "🍬",
     shipmentIcon: "🚚",
@@ -163,12 +182,12 @@ const THEME_UI = {
     releaseLabel: "🚚 Release & start transport",
     hallLabel: "PUMPKIN WORKSHOP",
     depotLabel: "SPOOKY GIFT DEPOT",
-    documentTitle: "Halloween Logistics Campus · Jira"
+    documentTitle: "Jira Flowyard · Halloween Theme"
   },
 
   summer: {
     title: "Summer Logistics Campus",
-    subtitle: "Harbour Bay · Jira Holiday Sync",
+    subtitle: "Jira Flowyard · Harbour Bay",
     brandIcon: "🏖",
     packageIcon: "🧳",
     shipmentIcon: "🚚",
@@ -179,12 +198,12 @@ const THEME_UI = {
     releaseLabel: "🚚 Release & start transport",
     hallLabel: "HARBOUR WORKSHOP",
     depotLabel: "BEACH DEPOT",
-    documentTitle: "Summer Logistics Campus · Jira"
+    documentTitle: "Jira Flowyard · Summer Theme"
   },
 
   neon: {
     title: "Night Shift Campus",
-    subtitle: "Sector 7 · Jira After Dark",
+    subtitle: "Jira Flowyard · Night Shift",
     brandIcon: "🌃",
     packageIcon: "📦",
     shipmentIcon: "🚚",
@@ -195,7 +214,7 @@ const THEME_UI = {
     releaseLabel: "🚚 Release & start transport",
     hallLabel: "NIGHT WORKSHOP",
     depotLabel: "NEON DEPOT",
-    documentTitle: "Night Shift Campus · Jira"
+    documentTitle: "Jira Flowyard · Night Shift Theme"
   }
 };
 
@@ -233,7 +252,7 @@ function applyThemeUI(theme) {
 
 function restoreTheme() {
   const fromUrl = urlTheme();
-  const saved = localStorage.getItem(THEME_KEY);
+  const saved = readPreference(THEME_KEY, LEGACY_THEME_KEY);
   const theme =
     fromUrl || (VALID_THEMES.has(saved) ? saved : "corporate");
 
@@ -545,7 +564,7 @@ function setPanelOpen(open, { persist = true } = {}) {
 }
 
 function restorePanelState() {
-  setPanelOpen(localStorage.getItem(PANEL_KEY) === "open", {
+  setPanelOpen(readPreference(PANEL_KEY, LEGACY_PANEL_KEY) === "open", {
     persist: false
   });
 }
@@ -2476,7 +2495,7 @@ function wireEvents() {
  * ------------------------------------------------------------------ */
 
 async function init() {
-  window.christmasCampus = campus;
+  window.jiraFlowyard = campus;
 
   wireEvents();
   renderThemeMenu();

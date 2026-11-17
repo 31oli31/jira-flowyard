@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Jira connection · Christmas Logistics Campus</title>
+    <title>Jira connection · Jira Flowyard</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="options.css" />
   </head>
@@ -14,7 +14,7 @@
         <div class="brand">
           <div class="brand-icon">🎄</div>
           <div>
-            <h1>Christmas Logistics Campus</h1>
+            <h1>Jira Flowyard</h1>
             <p>Jira connection for the browser extension</p>
           </div>
         </div>
@@ -28,8 +28,9 @@
         <h2>Jira instance</h2>
         <p class="hint">
           The campus calls <code>/rest/api/3</code> of this Jira directly from
-          your browser. Credentials are stored locally in
-          <code>chrome.storage.local</code> and never leave this browser.
+          your browser. Credentials persist in this browser profile's
+          <code>chrome.storage.local</code> and are sent to the configured Jira
+          site over HTTPS.
         </p>
 
         <label for="jiraBaseUrl">
@@ -151,6 +152,10 @@
           Everything else (label, project key, poll interval, quantity field)
           is configured in the campus sidebar. The campus starts in mock mode
           until a Jira instance is configured here.
+        </p>
+        <p>
+          Christmas, Halloween, Summer and Night Shift are only visual themes
+          of the same 3D Jira visualizer.
         </p>
         <p>
           This page is the only place where credentials are entered. Remove
