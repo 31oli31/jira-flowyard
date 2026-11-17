@@ -20,7 +20,8 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
   "options_ui": {
     "page": "options.html",
@@ -30,8 +31,11 @@
   "optional_host_permissions": ["https://*/*"],
   "browser_specific_settings": {
     "gecko": {
-      "id": "jira-flowyard@campus.local",
-      "strict_min_version": "128.0"
+      "id": "{2908765d-20d9-4c98-adfb-3c3c03b54f65}",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   }
 }

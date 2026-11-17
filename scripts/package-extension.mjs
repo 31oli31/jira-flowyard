@@ -8,8 +8,9 @@
  *     jira-flowyard-<v>-firefox.zip  AMO upload (with gecko id)
  *     SHA256SUMS.txt                              checksums for both archives
  *
- * The Chrome variant strips browser_specific_settings so the manifest stays
- * clean of Firefox-only keys; the Firefox variant is packaged as built.
+ * The Chrome variant strips browser_specific_settings and the Firefox
+ * background fallback; the Firefox variant drops the service_worker key so
+ * each store gets a manifest with only the background key it supports.
  * Archives are deterministic (see scripts/lib/zip.mjs).
  */
 import { createHash } from "node:crypto";
@@ -71,12 +72,30 @@ function chromeVariant(files) {
   };
 
   delete chromeManifest.browser_specific_settings;
+  delete chromeManifest.background?.scripts;
 
+  return withManifest(files, chromeManifest);
+}
+
+function firefoxVariant(files) {
+  const manifestEntry = files.find((entry) => entry.path === "manifest.json");
+
+  if (!manifestEntry) {
+    throw new Error("manifest.json is missing from the build output");
+  }
+
+  const manifest = JSON.parse(manifestEntry.data.toString("utf8"));
+  delete manifest.background?.service_worker;
+
+  return withManifest(files, manifest);
+}
+
+function withManifest(files, manifest) {
   return [
     ...files.filter((entry) => entry.path !== "manifest.json"),
     {
       path: "manifest.json",
-      data: Buffer.from(`${JSON.stringify(chromeManifest, null, 2)}\n`, "utf8")
+      data: Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`, "utf8")
     }
   ];
 }
@@ -107,7 +126,7 @@ async function main() {
   const slug = `${name}-${version}`;
   const archives = [
     { file: join(distDir, `${slug}-chrome.zip`), entries: chromeVariant(files) },
-    { file: join(distDir, `${slug}-firefox.zip`), entries: files }
+    { file: join(distDir, `${slug}-firefox.zip`), entries: firefoxVariant(files) }
   ];
 
   const checksums = [];
